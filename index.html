@@ -1,0 +1,490 @@
+<title>休閒活動溝通板</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+/* 版面：上方句子條，中間課文句子與分類格子，下方固定常用字。顏色依詞類固定，位置不會跳動 */
+:root{
+  --bg:#FFF6E6; --card:#FFFFFF; --ink:#4A342C; --muted:#7A6258; --line:#EAD9BF; --accent:#E0701F; --focus:#1E6FD9;
+  --c-person:#F2C230; --c-verb:#4DB36A; --c-noun:#F2923C; --c-desc:#4F9BE8; --c-q:#9A66DA; --c-social:#EC6A9A; --c-core:#8C7468; --c-time:#8E63D6; --r-who:#3F7FD9; --r-where:#2E9B63; --r-what:#E0701F;
+  --tile:130px;
+  --font:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:500;
+  padding-block:10px 24px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;user-select:none;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;touch-action:manipulation}
+button:focus-visible{outline:5px solid var(--focus);outline-offset:2px}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bar h1{font-size:clamp(22px,4vw,30px);font-weight:900;margin:0;flex:1;min-width:180px}
+.seg{display:flex;border:4px solid var(--line);border-radius:26px;overflow:hidden;background:#fff}
+.seg button{padding:8px 16px;font-size:20px;font-weight:900;min-height:48px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.tg{min-height:48px;padding:0 16px;border:4px solid var(--line);border-radius:26px;background:#fff;font-size:20px;font-weight:900}
+.tg[aria-pressed="true"]{background:#E7F8EE;border-color:#2E9B63}
+.strip{display:flex;gap:10px;align-items:stretch}
+.sent{flex:1;min-width:0;min-height:96px;background:#fff;border:6px solid var(--ink);border-radius:26px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-content:center}
+.sent .hint{color:#B9A592;font-size:26px;font-weight:700;padding:6px 10px}
+.chip{display:flex;align-items:center;gap:6px;background:var(--c);color:#1E1A17;border-radius:16px;padding:4px 12px 4px 6px;font-size:28px;font-weight:900}
+.chip svg{width:46px;height:46px;background:#fff;border-radius:12px}
+.chip .t{padding:0 4px}
+.actions{display:flex;flex-direction:column;gap:6px;width:150px}
+.play{flex:1;border-radius:22px;background:var(--accent);color:#fff;font-size:34px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 0 #B5560F;min-height:64px}
+.play:active{transform:translateY(4px);box-shadow:0 2px 0 #B5560F}
+.play svg{width:36px;height:36px}
+.mini{display:flex;gap:6px}
+.mini button{flex:1;min-height:44px;border-radius:16px;background:#fff;border:4px solid var(--line);font-size:20px;font-weight:900}
+.lessons{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px}
+.lessons button{flex:none;border:5px solid var(--c,var(--line));border-radius:24px;background:#fff;padding:4px 14px 4px 6px;font-size:22px;font-weight:900;display:flex;align-items:center;gap:6px;min-height:60px}
+.lessons button svg{width:44px;height:58px}
+.lessons button[aria-pressed="true"]{background:var(--c,var(--ink));color:#fff}
+.say{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px}
+.say button{flex:none;background:#fff;border:5px solid var(--c);border-radius:22px;padding:8px 16px;font-size:26px;font-weight:900;min-height:56px;white-space:nowrap}
+.say button:active{background:var(--c);color:#fff}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:84px;min-height:56px;border-radius:18px 18px 8px 8px;background:var(--c);color:#1E1A17;font-size:24px;font-weight:900;opacity:.55;border-bottom:6px solid transparent}
+.tabs button[aria-selected="true"]{opacity:1;border-bottom-color:var(--ink);transform:translateY(-2px)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tile),1fr));gap:10px;min-height:150px}
+.tile{background:#fff;border:6px solid var(--c);border-radius:22px;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;min-height:calc(var(--tile)*1.05);text-align:center;font-weight:900;font-size:calc(var(--tile)*.2);line-height:1.15}
+.tile .pic{width:100%;flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.tile .pic svg{width:70%;max-width:calc(var(--tile)*.78);height:auto;max-height:calc(var(--tile)*.7)}
+.tile .pic .glyph{font-size:calc(var(--tile)*.42);font-weight:900;color:var(--c)}
+.tile:active{transform:scale(.96);background:#FFF3DD}
+.tile.scan,.fslot.scan,.tabs button.scan,.play.scan,.mini button.scan,.say button.scan{outline:8px solid var(--focus);outline-offset:2px;z-index:2}
+.core{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:8px;background:#fff;border:4px solid var(--line);border-radius:22px;padding:8px}
+.core .tile{min-height:86px;font-size:20px;border-width:5px;padding:4px 2px}
+.core .tile .pic svg{width:46px;height:46px}
+.core .tile .pic{flex:none}
+.core .tile .pic .glyph{font-size:34px}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:24px;padding:30px}
+.pick{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#1E6FD9;color:#fff;font-size:34px;font-weight:900;text-align:center;z-index:30}
+body.size-l{--tile:170px}body.size-m{--tile:130px}body.size-s{--tile:100px}
+.frame{display:flex;gap:10px;align-items:stretch;background:#fff;border:6px solid #9A66DA;border-radius:26px;padding:8px;flex-wrap:wrap}
+.frame .prev{width:230px;flex:none;border-radius:16px;overflow:hidden;background:#F6EEDD;display:flex;align-items:center;justify-content:center;color:#B9A592;font-weight:700;font-size:18px;text-align:center;min-height:144px;max-width:100%}
+.frame .prev svg{display:block;width:100%;height:auto}
+.fslots{flex:1;min-width:260px;display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.fslot{border:5px dashed #D9C3A5;border-radius:20px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;min-height:110px;font-size:24px;font-weight:900;color:#C9B390}
+.fslot small{font-size:18px;font-weight:900}
+.fslot.on{border-style:solid;border-color:var(--sc);background:var(--sc);color:#fff}
+.fslot.on svg{height:56px;width:auto;max-width:90px;background:#fff;border-radius:12px;padding:2px}
+.dlg{position:fixed;inset:0;background:rgba(74,52,44,.6);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow:auto}
+.dlg>div{background:#FFF6E6;border:8px solid #9A66DA;border-radius:28px;padding:16px;max-width:640px;width:100%;display:flex;flex-direction:column;gap:10px}
+.dlg h2{margin:0;font-size:30px}.dlg p{margin:0;font-size:18px;color:#7A6258;line-height:1.5}
+.prs{display:flex;gap:10px;align-items:center;background:#fff;border:4px solid #EAD9BF;border-radius:20px;padding:8px}
+.prs .ph{width:84px;height:84px;flex:none;border-radius:16px;overflow:hidden;background:#F6EEDD;display:flex;align-items:center;justify-content:center}
+.prs .ph svg{height:84px;width:auto}
+.prs input[type=text]{flex:1;min-width:0;font:inherit;font-size:26px;font-weight:900;border:4px solid #EAD9BF;border-radius:14px;padding:6px 10px;background:#fff;color:inherit}
+.prs button,.dlg .row button{font:inherit;font-weight:900;font-size:20px;border:4px solid #D9C3A5;background:#fff;border-radius:16px;padding:8px 12px;color:inherit;cursor:pointer}
+.dlg .row{display:flex;gap:8px;flex-wrap:wrap}.dlg .row .go{background:#E0701F;color:#fff;border-color:#B5560F}
+.pick3{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;gap:8px;align-items:stretch;background:#fff;border:5px solid var(--rc);border-radius:24px;padding:6px}
+.prow .rl{width:96px;flex:none;background:var(--rc);color:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:900;font-size:28px;line-height:1.15;padding:4px}
+.prow .pt{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(calc(var(--tile)*.78),1fr));gap:8px}
+.prow .tile{border-color:var(--rc);min-height:calc(var(--tile)*.95)}
+.prow .tile[aria-pressed="true"]{background:var(--rc);color:#fff;transform:scale(1.04)}
+.prow .tile[aria-pressed="true"] .pic svg{background:#fff;border-radius:12px}
+.prow .tile.scan{outline:8px solid var(--focus)}
+.fact{display:flex;flex-direction:column;gap:6px;width:150px}
+.fact .play{min-height:60px}
+.say button.sentb{border-width:6px}
+@media (max-width:640px){.actions{width:104px}.play{font-size:26px}.chip{font-size:22px}.chip svg{width:38px;height:38px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* 列印圖卡 */
+.printonly{display:none}
+body.print{background:#fff;padding:0}
+body.print .app{display:none}
+body.print .printonly{display:block}
+.pg{page-break-after:always;padding:8mm 8mm}
+.pg h2{margin:0 0 4mm;font-size:18pt}
+.pgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:4mm}
+.pc{border:2.2mm solid var(--c);border-radius:4mm;height:40mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:1.5mm;text-align:center;font-weight:900;font-size:15pt;break-inside:avoid}
+.pc .pic{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;width:100%}
+.pc .pic svg{height:24mm;width:auto;max-width:100%}
+.pc .pic .glyph{font-size:30pt;color:var(--c)}
+@page{size:A4 landscape;margin:0}
+</style>
+
+<div class="app" id="app"></div>
+<div class="printonly" id="print"></div>
+
+<script>
+/* 休閒活動繪本 共用插圖：角色、場景、物件。純字串 SVG，簡報/影片/遊戲共用 */
+(function (root) {
+  const INK = '#4A342C';
+  const C = (cx, cy, r, f, x = '') => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${f}" ${x}/>`;
+  const E = (cx, cy, rx, ry, f, x = '') => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${f}" ${x}/>`;
+  const R = (x, y, w, h, f, rx = 0, ex = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f}" ${ex}/>`;
+  const P = (d, f, ex = '') => `<path d="${d}" fill="${f}" ${ex}/>`;
+  const L = (d, s, w, ex = '') => `<path d="${d}" fill="none" stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${ex}/>`;
+  const G = (inner, tf = '', ex = '') => `<g transform="${tf}" ${ex}>${inner}</g>`;
+  const ST = `stroke="${INK}" stroke-width="4" stroke-linejoin="round"`;
+
+  /* ---------- 資料 ---------- */
+  const DATA = [
+    { key: 'hike', time: '早上', who: '佑佑', gender: 'boy', pron: '他', skin: '#F5CBA7', hair: '#4A3427', reason: '可以看風景', color: '#3FA66E', place: '山上', act: '爬山',
+      items: [
+        { name: '太陽', slot: 'top', pos: '上面' }, { name: '花', slot: 'bottom', pos: '下面' },
+        { name: '樹', slot: 'left', pos: '左邊' }, { name: '小鳥', slot: 'right', pos: '右邊' },
+        { name: '背包', slot: 'next', pos: '旁邊' }] },
+    { key: 'read', time: '下午', who: '小茵', gender: 'girl', pron: '她', skin: '#FAD9C1', hair: '#2B2B3A', reason: '可以看故事', color: '#EC5C8A', place: '圖書館', act: '看書',
+      items: [
+        { name: '月亮', slot: 'top', pos: '上面' }, { name: '地毯', slot: 'bottom', pos: '下面' },
+        { name: '書架', slot: 'left', pos: '左邊' }, { name: '檯燈', slot: 'right', pos: '右邊' },
+        { name: '書', slot: 'next', pos: '旁邊' }] },
+    { key: 'sing', time: '星期六', who: '阿彙', gender: 'girl', pron: '她', skin: '#E0AE86', hair: '#6B3F1E', reason: '可以大聲唱', color: '#F2683C', place: '舞台上', act: '唱歌',
+      items: [
+        { name: '燈', slot: 'top', pos: '上面' }, { name: '喇叭', slot: 'bottom', pos: '下面' },
+        { name: '星星', slot: 'left', pos: '左邊' }, { name: '音符', slot: 'right', pos: '右邊' },
+        { name: '麥克風', slot: 'next', pos: '旁邊' }] },
+    { key: 'puzzle', time: '晚上', who: '小翊', gender: 'boy', pron: '他', skin: '#F3C9A5', hair: '#5B3A29', reason: '可以動動腦', color: '#3E8FE0', place: '家裡', act: '拼圖',
+      items: [
+        { name: '時鐘', slot: 'top', pos: '上面' }, { name: '盒子', slot: 'bottom', pos: '下面' },
+        { name: '盆栽', slot: 'left', pos: '左邊' }, { name: '杯子', slot: 'right', pos: '右邊' },
+        { name: '拼圖片', slot: 'next', pos: '旁邊' }] },
+    { key: 'draw', time: '放學後', who: '寰寰', gender: 'girl', pron: '她', skin: '#F8D6BC', hair: '#2B2230', reason: '可以畫彩色的圖', color: '#9A66DA', place: '教室', act: '畫畫',
+      items: [
+        { name: '彩虹', slot: 'top', pos: '上面' }, { name: '顏料', slot: 'bottom', pos: '下面' },
+        { name: '畫架', slot: 'left', pos: '左邊' }, { name: '調色盤', slot: 'right', pos: '右邊' },
+        { name: '畫筆', slot: 'next', pos: '旁邊' }] },
+  ];
+  const SLOT = { top: [640, 82], bottom: [170, 436], left: [92, 292], right: [708, 292], next: [548, 412] };
+  const HERO = { x: 380, y: 446, s: 1.3 };
+
+  /* ---------- 物件（以 0,0 為中心）---------- */
+  const star5 = (R1, R2) => { let d = ''; for (let i = 0; i < 10; i++) { const r = i % 2 ? R2 : R1, a = -Math.PI / 2 + i * Math.PI / 5; d += (i ? 'L' : 'M') + (r * Math.cos(a)).toFixed(1) + ' ' + (r * Math.sin(a)).toFixed(1); } return d + 'Z'; };
+  const ITEMS = {
+    '太陽': { w: 130, h: 130, svg: () => { let r = ''; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; r += L(`M${46 * Math.cos(a)} ${46 * Math.sin(a)} L${62 * Math.cos(a)} ${62 * Math.sin(a)}`, '#F2A900', 7); } return r + C(0, 0, 34, '#FFD54A', 'stroke="#F2A900" stroke-width="4"') + C(-11, -4, 3.5, INK) + C(11, -4, 3.5, INK) + L('M-9 10 Q0 18 9 10', INK, 3) + C(-20, 8, 6, '#FF9E80', 'opacity=".6"') + C(20, 8, 6, '#FF9E80', 'opacity=".6"'); } },
+    '花': { w: 90, h: 130, svg: () => { let p = ''; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; p += C(20 * Math.cos(a), -10 + 20 * Math.sin(a), 15, '#FF8FB1', `stroke="${INK}" stroke-width="2.5"`); } return L('M0 8 Q6 36 0 62', '#3E9E4F', 7) + E(14, 40, 16, 7, '#5BBF6A', 'transform="rotate(-25 14 40)"') + p + C(0, -10, 11, '#FFD54A', `stroke="${INK}" stroke-width="2.5"`); } },
+    '樹': { w: 150, h: 200, svg: () => R(-14, 10, 28, 92, '#8D5A3B', 6) + C(0, -34, 58, '#5BBF6A') + C(-42, 0, 38, '#4FB05F') + C(42, 0, 38, '#4FB05F') + C(0, 10, 40, '#5BBF6A') + C(-18, -44, 7, '#8ADB95') + C(22, -20, 6, '#8ADB95') },
+    '小鳥': { w: 130, h: 70, svg: () => P('M-30 0 L-62 -14 L-58 10Z', '#2F7DD6') + E(0, 0, 36, 27, '#4FA3F7', ST) + E(-4, 4, 19, 11, '#2F7DD6', 'transform="rotate(-20 -4 4)"') + C(28, -12, 19, '#4FA3F7', ST) + P('M45 -14 L63 -8 L45 -2Z', '#FFA726', ST) + C(33, -16, 3.5, INK) },
+    '背包': { w: 90, h: 100, svg: () => L('M-14 -38 Q0 -62 14 -38', '#B53D1E', 7) + R(-36, -40, 72, 84, '#EF6C4A', 18, ST) + R(-25, 6, 50, 30, '#D9532F', 8, ST) + L('M-25 14 H25', '#FFD2C2', 3) + R(-8, 10, 16, 10, '#FFD54A', 3) },
+    '月亮': { w: 120, h: 120, svg: () => R(-60, -60, 120, 120, '#8A5A3B', 8) + R(-50, -50, 100, 100, '#2B3A67') + C(-6, -6, 26, '#FFE58A') + C(8, -16, 24, '#2B3A67') + P(star5(8, 3.5), '#FFE58A', 'transform="translate(28 22)"') + P(star5(6, 2.5), '#FFE58A', 'transform="translate(-30 30)"') + L('M0 -50 V50 M-50 0 H50', '#8A5A3B', 6) },
+    '地毯': { w: 180, h: 46, svg: () => E(0, 0, 90, 23, '#E57373', ST) + E(0, 0, 66, 15, '#FFF1C9') + E(0, 0, 40, 8, '#E57373') },
+    '書架': { w: 130, h: 230, svg: () => { let b = ''; const cols = ['#E8574B', '#4F8FE0', '#FFC107', '#6CC070', '#9A66DA', '#FF8A65']; [-84, -26, 32].forEach((y, r) => { let x = -50; for (let i = 0; i < 6; i++) { const w = 12 + ((i + r) % 3) * 4, h = 38 + ((i * 7 + r * 5) % 4) * 4; b += R(x, y + 52 - h, w, h, cols[(i + r * 2) % 6], 3); x += w + 4; } }); return R(-65, -115, 130, 230, '#9C6B43', 8, ST) + R(-56, -106, 112, 212, '#7A5230', 4) + b + R(-60, -32, 120, 6, '#9C6B43') + R(-60, 26, 120, 6, '#9C6B43') + R(-60, 84, 120, 6, '#9C6B43'); } },
+    '檯燈': { w: 110, h: 190, svg: () => C(0, -42, 70, '#FFF3B0', 'opacity=".35"') + E(0, 100, 32, 8, '#6D4C41') + R(-4, -20, 8, 120, '#6D4C41', 3) + P('M-42 -18 L-24 -72 L24 -72 L42 -18Z', '#FFD54A', ST) },
+    '書': { w: 90, h: 80, svg: () => R(-42, 10, 84, 24, '#4F8FE0', 5, ST) + R(-36, -14, 74, 24, '#E8574B', 5, ST) + R(-30, -38, 64, 24, '#6CC070', 5, ST) + R(-36, 16, 70, 4, '#FFF', 2) + R(-30, -8, 62, 4, '#FFF', 2) + R(-24, -32, 52, 4, '#FFF', 2) },
+    '燈': { w: 90, h: 110, svg: () => L('M0 -60 V-44', INK, 5) + P('M-28 -44 L28 -44 L38 -4 L-38 -4Z', '#555566', ST) + E(0, -4, 38, 9, '#FFF6B0', ST) + R(-6, -52, 12, 10, '#333344', 2) },
+    '喇叭': { w: 100, h: 120, svg: () => R(-48, -60, 96, 120, '#3A3A4A', 14, ST) + C(0, 22, 30, '#555566') + C(0, 22, 19, '#2A2A35') + C(0, 22, 6, '#8888AA') + C(0, -26, 14, '#555566') + C(0, -26, 7, '#2A2A35') },
+    '星星': { w: 110, h: 110, svg: () => P(star5(54, 24), '#FFD54A', 'stroke="#F2A900" stroke-width="5" stroke-linejoin="round"') + C(-10, -2, 3.5, INK) + C(10, -2, 3.5, INK) + L('M-7 9 Q0 15 7 9', INK, 3) },
+    '音符': { w: 100, h: 110, svg: () => R(-10, -40, 7, 72, '#7E57C2', 3) + R(38, -50, 7, 72, '#7E57C2', 3) + P('M-10 -40 L45 -52 L45 -38 L-10 -26Z', '#7E57C2') + E(-24, 32, 18, 13, '#7E57C2', 'transform="rotate(-20 -24 32)"') + E(24, 22, 18, 13, '#7E57C2', 'transform="rotate(-20 24 22)"') },
+    '麥克風': { w: 70, h: 140, svg: () => E(0, 70, 34, 8, '#555566') + R(-3, -2, 6, 72, '#888899', 2) + C(0, -26, 21, '#9A9AAA', ST) + R(-13, -8, 26, 9, '#FFB300', 3) + L('M-10 -34 L10 -34 M-12 -26 L12 -26 M-10 -18 L10 -18', '#666677', 2.5) },
+    '時鐘': { w: 120, h: 120, svg: () => { let t = ''; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; t += L(`M${38 * Math.cos(a)} ${38 * Math.sin(a)} L${44 * Math.cos(a)} ${44 * Math.sin(a)}`, INK, 3); } return C(0, 0, 54, '#FFFFFF', 'stroke="#C0653E" stroke-width="8"') + t + L('M0 0 V-30', INK, 5) + L('M0 0 L24 12', INK, 5) + C(0, 0, 5, '#E8574B'); } },
+    '盒子': { w: 130, h: 76, svg: () => R(-62, -36, 124, 72, '#42A5F5', 9, ST) + R(-52, -27, 104, 54, '#BFE6FF', 4) + C(-24, -9, 10, '#FFD54A') + P('M-52 27 Q-8 -12 52 27Z', '#6CC070') + P('M10 27 Q32 4 52 27Z', '#4FB05F') },
+    '盆栽': { w: 110, h: 190, svg: () => { let l = ''; [[-30, -34, -50], [30, -34, 50], [-24, -66, -24], [24, -66, 24], [0, -80, 0]].forEach(([x, y, r]) => { l += E(x, y, 16, 34, '#5BBF6A', `transform="rotate(${r} ${x} ${y + 30})" stroke="#3E9E4F" stroke-width="3"`); }); return R(-38, 74, 76, 10, '#B07C54', 3) + L('M-30 84 L-34 100 M30 84 L34 100', '#B07C54', 6) + l + P('M-32 14 L32 14 L24 74 L-24 74Z', '#D9825B', ST) + R(-36, 8, 72, 12, '#E89874', 4, ST); } },
+    '杯子': { w: 130, h: 100, svg: () => R(-60, 30, 120, 10, '#9C6B43', 3) + L('M-8 -40 Q-16 -52 -8 -62 M10 -40 Q2 -52 10 -62', '#B8B8C8', 4) + L('M26 -8 Q50 -8 46 12 Q42 26 24 22', '#FF8A65', 8) + P('M-30 -26 L30 -26 L24 30 L-24 30Z', '#FF8A65', ST) + R(-30, -26, 60, 10, '#FFB59E', 3) },
+    '拼圖片': { w: 80, h: 80, svg: () => P('M-30 -30 H-10 A10 10 0 1 1 10 -30 H30 V-10 A10 10 0 1 1 30 10 V30 H-30 Z', '#EF5350', ST) },
+    '彩虹': { w: 120, h: 100, svg: () => { let a = ''; ['#EF5350', '#FFA726', '#FFD54A', '#66BB6A', '#42A5F5'].forEach((c, i) => { const r = 40 - i * 6.5; a += L(`M${-r} 24 A${r} ${r} 0 0 1 ${r} 24`, c, 7); }); return R(-58, -46, 116, 94, '#FFFFFF', 6, 'stroke="#C9B8A6" stroke-width="5"') + a + E(-38, 28, 12, 7, '#DDEFFF') + E(38, 28, 12, 7, '#DDEFFF'); } },
+    '顏料': { w: 140, h: 80, svg: () => [['#EF5350', -26, -12], ['#42A5F5', 0, 0], ['#FFD54A', 24, 12]].map(([c, y, r]) => G(R(-50, -11, 62, 22, c, 6, ST) + R(12, -8, 16, 16, '#EEE', 3, ST), `translate(0 ${y * 0.9}) rotate(${r})`)).join('') },
+    '畫架': { w: 110, h: 210, svg: () => L('M-42 106 L-4 -50 M42 106 L4 -50 M0 -50 V96', '#9C6B43', 8) + R(-52, -100, 104, 116, '#FFFFFF', 4, 'stroke="#9C6B43" stroke-width="6"') + C(-16, -60, 15, '#EF5350') + C(18, -42, 19, '#42A5F5') + C(-8, -12, 13, '#FFD54A') + L('M-40 -30 Q-20 -40 0 -24 T40 -60', '#66BB6A', 6) },
+    '調色盤': { w: 120, h: 120, svg: () => R(-36, 46, 72, 10, '#B07C54', 3) + L('M-28 56 L-32 70 M28 56 L32 70', '#B07C54', 6) + E(0, 0, 54, 38, '#EBCB9E', 'stroke="#8D6E4E" stroke-width="4"') + C(-24, -10, 9, '#EF5350') + C(-4, -20, 9, '#FFD54A') + C(18, -13, 9, '#42A5F5') + C(30, 6, 9, '#66BB6A') + C(-30, 14, 7, '#EBCB9E', 'stroke="#8D6E4E" stroke-width="3"') },
+    '畫筆': { w: 90, h: 140, svg: () => R(-26, 2, 52, 60, '#90CAF9', 9, ST) + [[-12, -26, '#EF5350'], [2, -8, '#FFD54A'], [14, 22, '#42A5F5']].map(([x, a, c], i) => { const dx = Math.sin(a * Math.PI / 180) * 64, dy = -Math.cos(a * Math.PI / 180) * 64; return L(`M${x} 6 L${x + dx} ${6 + dy}`, '#C58B5B', 6) + L(`M${x + dx} ${6 + dy} L${x + dx * 1.22} ${6 + dy * 1.22}`, c, 10); }).join('') },
+  };
+  const NAMES = Object.keys(ITEMS);
+  const placed = (name, x, y, s = 1) => G(ITEMS[name].svg(), `translate(${x} ${y}) scale(${s})`, `data-n="${name}"`);
+  const itemSvg = (name, size = 160) => { const it = ITEMS[name], m = Math.max(it.w, it.h) + 16, s = size; return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m / 2} ${-m / 2} ${m} ${m}" width="${s}" height="${s}" aria-label="${name}">${it.svg()}</svg>`; };
+
+  /* ---------- 角色（真人小孩）---------- */
+  const PANTS = { hike: '#5B6B8C', read: '#8E7CC3', sing: '#7D8CC4', puzzle: '#4F5D7E', draw: '#E58AB0' };
+  function hero(key, opt = {}) {
+    const d = DATA.find(x => x.key === key), col = d.color, sk = d.skin, hr = d.hair, girl = d.gender === 'girl';
+    const act = opt.act || key, pc = PANTS[key], shoe = '#5A4A42';
+    let back = '', legs = '', arm = '', hairF = '', face = '', acc = '';
+    // 腿與鞋
+    if (girl) legs = R(-24, -22, 14, 20, sk, 4, ST) + R(10, -22, 14, 20, sk, 4, ST) + E(-20, -3, 17, 9, shoe, ST) + E(20, -3, 17, 9, shoe, ST) + P('M-42 -66 L42 -66 L58 -20 L-58 -20Z', pc, ST);
+    else legs = R(-36, -46, 32, 44, pc, 10, ST) + R(4, -46, 32, 44, pc, 10, ST) + E(-20, -3, 19, 9, shoe, ST) + E(20, -3, 19, 9, shoe, ST);
+    const torso = R(-40, -122, 80, 82, col, 28, ST);
+    // 手臂（依活動）
+    const armE = (x, y, rot) => E(x, y, 11, 26, sk, `${ST} transform="rotate(${rot} ${x} ${y})"`) + C(x + (rot > 0 ? -2 : 2), y - 20, 14, col, ST);
+    if (act === 'sing') arm = armE(-54, -86, 38) + armE(54, -86, -38);
+    else if (act === 'puzzle') arm = armE(-52, -72, 14) + armE(56, -96, -42);
+    else if (act === 'draw') arm = armE(-58, -92, -34) + armE(52, -72, -14);
+    else if (act === 'read') arm = armE(-48, -68, 8) + armE(48, -68, -8);
+    else arm = armE(-52, -72, 14) + armE(52, -72, -14);
+    // 頭髮
+    const hairStyle = {
+      hike: () => P('M-56 -150 C-62 -214 62 -214 56 -150 C48 -178 20 -188 0 -180 C-20 -188 -48 -178 -56 -150Z', hr, ST) + E(0, -178, 78, 15, '#FFC107', ST) + P('M-52 -180 Q0 -246 52 -180Z', '#FFD54A', ST) + R(-50, -190, 100, 10, '#E0701F', 4),
+      read: () => P('M-52 -158 Q-30 -198 0 -192 Q30 -198 52 -158 Q30 -172 0 -172 Q-30 -172 -52 -158Z', hr, ST) + P('M30 -200 L52 -214 L48 -190Z', '#F06292', ST) + P('M30 -200 L8 -216 L14 -192Z', '#F06292', ST) + C(30, -200, 6, '#FFC107', ST),
+      sing: () => P('M-56 -152 C-62 -214 62 -214 56 -152 C46 -182 20 -192 0 -184 C-20 -192 -46 -182 -56 -152Z', hr, ST) + R(-54, -180, 108, 11, '#FF5252', 5, ST) + C(40, -200, 13, '#FF5252', ST) + C(40, -200, 5, '#FFC107'),
+      puzzle: () => [[-46, -190, 17], [-24, -208, 19], [4, -212, 20], [30, -206, 19], [50, -186, 17]].map(([x, y, r]) => C(x, y, r, hr, ST)).join('') + P('M-54 -156 Q-34 -192 0 -186 Q34 -192 54 -156 Q30 -174 0 -172 Q-30 -174 -54 -156Z', hr, ST),
+      draw: () => P('M-56 -150 C-62 -212 62 -212 56 -150 C44 -180 20 -186 0 -178 C-20 -186 -44 -180 -56 -150Z', hr, ST) + E(0, -203, 48, 16, '#E0457B', ST) + C(0, -221, 6, '#E0457B', ST),
+    };
+    if (key === 'read') back = P('M-62 -150 Q-66 -98 -54 -94 L54 -94 Q66 -98 62 -150 Q60 -214 0 -212 Q-60 -214 -62 -150Z', hr, ST);
+    if (key === 'sing') back = P('M34 -196 Q104 -204 94 -126 Q90 -100 72 -92 Q76 -138 42 -168Z', hr, ST);
+    if (key === 'draw') back = C(-52, -196, 15, hr, ST) + C(52, -196, 15, hr, ST) + P('M-56 -140 Q-64 -96 -50 -90 L-44 -140Z', hr, ST) + P('M56 -140 Q64 -96 50 -90 L44 -140Z', hr, ST);
+    const open = act === 'sing';
+    face = C(-19, -148, 6.5, INK) + C(19, -148, 6.5, INK) + C(-21, -150.5, 2.3, '#fff') + C(17, -150.5, 2.3, '#fff') +
+      C(-34, -130, 9, '#FF9E9E', 'opacity=".55"') + C(34, -130, 9, '#FF9E9E', 'opacity=".55"') +
+      (open ? E(0, -124, 11, 9, '#D9534F', `stroke="${INK}" stroke-width="3"`) + E(0, -120, 6, 4, '#FF8A80') : L('M-10 -128 Q0 -117 10 -128', INK, 3.5)) +
+      (key === 'read' ? C(-19, -148, 16, 'none', `stroke="${INK}" stroke-width="3"`) + C(19, -148, 16, 'none', `stroke="${INK}" stroke-width="3"`) + L('M-3 -148 H3', INK, 3) : '');
+    const head = C(-55, -146, 9, sk, ST) + C(55, -146, 9, sk, ST) + C(0, -150, 54, sk, ST);
+    // 配件
+    if (act === 'hike') acc = `<g id="stick">${L('M72 -4 L84 -136', '#8D5A3B', 8)}${C(72, -4, 5, '#6D4C41')}</g>` + C(72, -72, 12, sk, ST);
+    if (act === 'read') acc = `<g id="book">` + P('M-52 -84 L0 -70 L0 -28 L-52 -42Z', '#FFFFFF', ST) + P('M52 -84 L0 -70 L0 -28 L52 -42Z', '#F4F4FF', ST) + L('M-42 -72 L-10 -63 M-42 -60 L-10 -51 M42 -72 L10 -63 M42 -60 L10 -51', '#B8B8D8', 3) + `<g id="page">` + P('M0 -70 L48 -82 L48 -40 L0 -28Z', '#FFFFFF', 'stroke="#B8B8D8" stroke-width="2"') + `</g></g>` + C(-52, -62, 10, sk, ST) + C(52, -62, 10, sk, ST);
+    if (act === 'sing') acc = `<g id="notes">` + [0, 1, 2].map(i => `<g id="n${i}" transform="translate(${60 + i * 34} ${-190 - i * 20})" opacity="0">` + G(ITEMS['音符'].svg(), 'scale(.3)') + `</g>`).join('') + `</g>`;
+    if (act === 'puzzle') acc = `<g id="piece" transform="translate(66 -128)">` + G(ITEMS['拼圖片'].svg(), 'scale(.55)') + '</g>' + C(62, -112, 11, sk, ST);
+    if (act === 'draw') acc = `<g id="brush" transform="translate(-70 -100)">` + L('M0 0 L-34 -52', '#C58B5B', 8) + L('M-34 -52 L-42 -66', '#EF5350', 12) + '</g>' + C(-62, -98, 11, sk, ST) + C(30, -122, 4, '#EF5350', 'opacity=".9"');
+    return `<g id="hero">${back}${legs}${torso}${arm}${head}${hairStyle[key]()}${face}${acc}</g>`;
+  }
+  const heroSvg = (key, size = 200, opt = {}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-110 -262 220 290" width="${size}" height="${Math.round(size * 290 / 220)}" aria-label="${DATA.find(d => d.key === key).who}">${hero(key, opt)}</svg>`;
+
+  /* ---------- 場景背景 ---------- */
+  const BG = {
+    hike: () => R(0, 0, 800, 500, '#BFE6FF') + C(520, 120, 0, '#fff') + E(560, 150, 70, 22, '#fff', 'opacity=".9"') + E(600, 138, 44, 20, '#fff', 'opacity=".9"') +
+      P('M120 360 L330 120 L520 360Z', '#9AA7B8') + P('M262 186 L330 120 L398 196 L360 180 L330 204 L300 176Z', '#fff') + P('M360 360 L560 170 L780 360Z', '#AEB9C8') + P('M512 218 L560 170 L610 226 L578 212 L556 232Z', '#fff') +
+      E(160, 440, 330, 130, '#8BD17C') + E(660, 460, 340, 120, '#6FC46E') + P('M300 500 Q360 450 420 420 Q520 380 640 396 L660 500Z', '#E7C58F') + P('M0 330 Q60 340 100 400 L0 420Z', '#79C86E'),
+    read: () => R(0, 0, 800, 500, '#FFE8D2') + R(0, 380, 800, 120, '#E3B07F') + R(0, 372, 800, 12, '#C98F5E') + [60, 200, 340, 480, 620, 760].map(x => C(x, 200 + (x % 3) * 20, 5, '#FFD1B0')).join('') +
+      L('M240 40 Q400 90 560 40', '#C98F5E', 3) + [270, 340, 410, 480, 540].map((x, i) => P(`M${x} ${50 + (i === 2 ? 14 : (i % 2 ? 8 : 0))} l16 0 l-8 26Z`, ['#EC5C8A', '#FFC107', '#6CC070', '#4F8FE0', '#EC5C8A'][i])).join('') + E(380, 448, 120, 24, '#F7D774', ST) + E(380, 440, 100, 18, '#FFE9A0'),
+    sing: () => R(0, 0, 800, 500, '#4B3F7A') + [[60, 60], [250, 40], [380, 150], [520, 40], [760, 140], [330, 90], [470, 200]].map(([x, y], i) => C(x, y, 3 + i % 3, '#FFE58A', 'opacity=".8"')).join('') +
+      P('M520 -6 L760 -6 L760 500 L520 500Z', '#4B3F7A', 'opacity="0"') + P('M600 70 L400 400 L760 400Z', '#FFF6B0', 'opacity=".16"') +
+      P('M0 0 H130 Q90 160 120 380 H0Z', '#D9423E') + P('M800 0 H670 Q710 160 680 380 H800Z', '#D9423E') + P('M0 0 H130 Q110 40 40 60Z', '#B63330') + P('M800 0 H670 Q690 40 760 60Z', '#B63330') + R(0, 384, 800, 116, '#C48A5C') + R(0, 384, 800, 10, '#E0A878') + E(380, 436, 150, 20, '#FFE58A', 'opacity=".35"'),
+    puzzle: () => R(0, 0, 800, 500, '#FFF3B8') + [[90, 50], [230, 120], [330, 40], [470, 140], [560, 30], [760, 140], [60, 190], [400, 230]].map(([x, y]) => C(x, y, 9, '#FFE27A')).join('') + R(0, 340, 800, 40, '#F6D58C') + R(0, 385, 800, 115, '#D9A066') + R(0, 385, 800, 14, '#EBB87F') + R(280, 408, 200, 70, '#fff', 8, ST) + R(290, 416, 180, 54, '#BFE6FF', 4) + R(290, 416, 60, 27, '#FFD54A') + R(350, 416, 60, 27, '#6CC070') + R(410, 416, 60, 27, '#42A5F5') + R(290, 443, 60, 27, '#EF5350') + R(350, 443, 60, 27, '#FFFFFF', 0, 'opacity=".0"') + R(410, 443, 60, 27, '#AB7BE0'),
+    draw: () => R(0, 0, 800, 500, '#D8F3E6') + R(0, 380, 800, 120, '#F2D6A8') + R(0, 372, 800, 12, '#D9B77E') + R(300, 40, 260, 160, '#fff', 8, 'stroke="#8BCAA8" stroke-width="8"') + R(308, 48, 244, 144, '#CDEBFF') + E(380, 120, 40, 16, '#fff') + E(410, 110, 30, 14, '#fff') + L('M430 48 V192', '#8BCAA8', 6) + [40, 90].map(x => C(x, 330, 6, '#B9E5CF')).join('') + E(380, 448, 140, 22, '#E8C79A', 'opacity=".6"'),
+  };
+
+  /* ---------- 場景 ---------- */
+  function scene(key, o = {}) {
+    const d = DATA.find(x => x.key === key), who = o.who || key, act = o.act || key, wd = DATA.find(x => x.key === who), ad = DATA.find(x => x.key === act);
+    const showItems = o.items !== false;
+    let inner = BG[key]();
+    const itemScale = { '喇叭': .8, '地毯': 1, '書架': .95, '畫架': .95, '盒子': .85, '顏料': .85, '樹': .9, '盆栽': .85 };
+    if (showItems) d.items.forEach(i => { if (i.slot !== 'next') inner += placed(i.name, ...SLOT[i.slot], itemScale[i.name] || 1); });
+    const h = HERO;
+    inner += `<g id="heroPos" transform="translate(${h.x} ${h.y}) scale(${h.s})">${hero(who, { act })}</g>`;
+    if (key === 'puzzle') inner += R(0, 385, 800, 115, '#D9A066') + R(0, 385, 800, 14, '#EBB87F') + R(270, 408, 210, 74, '#fff', 8, ST) + R(280, 416, 190, 58, '#BFE6FF', 4) + R(280, 416, 63, 29, '#FFD54A') + R(343, 416, 63, 29, '#6CC070') + R(406, 416, 64, 29, '#42A5F5') + R(280, 445, 63, 29, '#EF5350') + R(406, 445, 64, 29, '#AB7BE0') + R(343, 445, 63, 29, '#DDD', 0, 'stroke-dasharray="6 4" stroke="#aaa" stroke-width="2"') + (showItems ? placed('盒子', 170, 440, .85) : '');
+    if (showItems) d.items.forEach(i => { if (i.slot === 'next') inner += placed(i.name, ...SLOT[i.slot], 1); });
+    if (o.time) {
+      if (/早上/.test(o.time)) inner += R(0, 0, 800, 500, '#FFE08A', 0, 'opacity=".2"');
+      else if (/下午|放學/.test(o.time)) inner += R(0, 0, 800, 500, '#FF8A3C', 0, 'opacity=".16"');
+      else if (/晚上/.test(o.time)) inner += R(0, 0, 800, 500, '#18266B', 0, 'opacity=".4"') + [[80, 50], [200, 110], [700, 60], [600, 140], [420, 40]].map(([x, y]) => P(star5(9, 4), '#FFE58A', `transform="translate(${x} ${y})"`)).join('');
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" ${o.w ? `width="${o.w}" height="${Math.round(o.w * .625)}"` : ''} aria-label="${wd.who}在${d.place}${ad.act}" role="img">${inner}</svg>`;
+  }
+  const phrase = (d, it) => it.pos === '旁邊' ? `${it.name}在${d.who}旁邊` : `${it.name}在${it.pos}`;
+  const HIT = { '樹': 110, '書架': 125, '畫架': 115, '盆栽': 100, '喇叭': 70, '地毯': 90, '盒子': 70 };
+  const hitOf = (d, it) => { const [x, y] = SLOT[it.slot]; return { x, y, r: HIT[it.name] || 68 }; };
+
+  
+  /* ---------- 課文句子：簡單版(1) / 進階版(2) ---------- */
+  const CL = { '太陽': '個', '花': '朵', '樹': '棵', '小鳥': '隻', '背包': '個', '月亮': '個', '地毯': '條', '書架': '個', '檯燈': '盞', '書': '本', '燈': '盞', '喇叭': '個', '星星': '顆', '音符': '個', '麥克風': '支', '時鐘': '個', '盒子': '個', '盆栽': '盆', '杯子': '個', '拼圖片': '片', '彩虹': '道', '顏料': '條', '畫架': '個', '調色盤': '個', '畫筆': '支' };
+  const dOf = (k) => typeof k === 'string' ? DATA.find(x => x.key === k) : k;
+  const TIMELIST = ['早上', '下午', '晚上', '放學後', '星期六'];
+  const T = {
+    // 整句：誰 在 哪裡 做什麼
+    sent: (k, lv, o = {}) => {
+      const w = dOf(o.who || k), p = dOf(o.place || k), a = dOf(o.act || k), tm = o.time || dOf(k).time;
+      if (lv === 2) return { q: '什麼時候，誰在哪裡做什麼？', a: `${tm}，${w.who}在${p.place}${a.act}。`, short: `${w.who}在${p.place}${a.act}`,
+        parts: [['什麼時候？', tm], ['誰？', w.who], ['在哪裡？', `在${p.place}`], ['做什麼？', a.act]], reason: `${w.who}喜歡${a.act}，因為${a.reason}。` };
+      return { q: '誰在哪裡做什麼？', a: `${w.who}在${p.place}${a.act}。`, short: `${w.who}在${p.place}${a.act}`,
+        parts: [['誰？', w.who], ['在哪裡？', `在${p.place}`], ['做什麼？', a.act]], reason: `${w.who}喜歡${a.act}。` };
+    },
+    where: (k, lv) => { const d = dOf(k); return { q: `${d.who}在哪裡？`, a: `${d.who}在${d.place}。` }; },
+    doing: (k, lv) => { const d = dOf(k); return lv === 2 ? { q: `${d.who}正在做什麼呢？`, a: `${d.who}正在${d.place}${d.act}。`, like: `${d.who}喜歡${d.act}，因為${d.reason}。` } : { q: `${d.who}在做什麼？`, a: `${d.who}在${d.act}。`, like: `${d.who}喜歡${d.act}。` }; },
+    pos: (k, it, lv) => { const d = dOf(k); return it.pos === '旁邊' ? `${d.who}的旁邊` : (lv === 2 ? `圖畫的${it.pos}` : it.pos); },
+    find: (k, it, lv) => { const d = dOf(k); if (lv === 2) { const p = T.pos(d, it, 2); return { q: `請問${it.name}在哪裡呢？`, a: `${it.name}在${p}。`, a2: `${p}，有一${CL[it.name]}${it.name}。` }; } return { q: `${it.name}在哪裡？`, a: phrase(d, it) + '。' }; },
+    have: (k, it, present, lv) => { const d = dOf(k); if (lv === 2) return { q: `${d.place}有沒有${it.name}呢？`, a: present ? `有，${d.place}有一${CL[it.name]}${it.name}。` : `沒有，${d.place}沒有${it.name}。` }; return { q: `${d.place}有沒有${it.name}？`, a: present ? '有。' : '沒有。' }; },
+    who: (d, askAct, lv) => lv === 2 ? { q: askAct ? `${d.who}喜歡做什麼呢？` : `誰喜歡${d.act}呢？`, a: `${d.who}喜歡${d.act}，因為${d.reason}。` } : { q: askAct ? `${d.who}喜歡什麼？` : `誰喜歡${d.act}？`, a: `${d.who}喜歡${d.act}。` },
+    what: (lv) => lv === 2 ? { a: '休閒活動，是有空的時候，做自己喜歡又開心的事。', q: '你有空的時候，喜歡做什麼呢？' } : { a: '休閒活動，是做了很開心的事。', q: '什麼是休閒活動？' },
+    end: (lv) => lv === 2 ? { q: '你喜歡什麼休閒活動呢？為什麼呢？', blank: '我喜歡＿＿＿＿，因為＿＿＿＿。', say: (act) => `我喜歡${act}。` } : { q: '你喜歡什麼休閒活動？', blank: '我喜歡＿＿＿＿。', say: (act) => `我喜歡${act}。` },
+    intro: (d, lv) => lv === 2 ? `${d.who}是${d.gender === 'girl' ? '女生' : '男生'}，${d.pron}喜歡${d.act}。` : `${d.pron}是${d.who}。`,
+    who1: (lv) => lv === 2 ? '他們是誰？他們喜歡做什麼？' : '他是誰？',
+  };
+
+  root.Art = { T, CL, TIMELIST, DATA, SLOT, HERO, ITEMS, NAMES, scene, hero, heroSvg, itemSvg, phrase, hitOf, placed, INK };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+'use strict';
+const A=window.Art,T=A.T,D=A.DATA;
+const $=(h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild};
+const CAT={person:{n:'人物・誰',c:'var(--c-person)'},verb:{n:'事情・做什麼',c:'var(--c-verb)'},place:{n:'地點・在哪裡',c:'var(--c-noun)'},time:{n:'時間',c:'var(--c-time)'},item:{n:'物品',c:'var(--c-noun)'},pos:{n:'方位',c:'var(--c-desc)'},q:{n:'問句',c:'var(--c-q)'},ans:{n:'回答',c:'var(--c-social)'}};
+const TABS=['item','pos','q','ans'];
+
+/* ---------- 圖示 ---------- */
+const ic=(inner,col='#4A342C')=>`<svg viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const HAND='<path d="M5 13V8M9 13V5M13 13V5M17 13V8M5 13Q5 20 11 20Q17 20 17 13"/>';
+const ICO={
+  me:ic('<circle cx="12" cy="7" r="3.6"/><path d="M4.5 21Q4.5 13 12 13T19.5 21Z" fill="#F2C230"/><circle cx="12" cy="17" r="1.2" fill="#4A342C"/>'),
+  like:ic('<path d="M12 21C3 14 2 8 6 5.5 9 4 11 6 12 8 13 6 15 4 18 5.5 22 8 21 14 12 21Z" fill="#EC5C8A" stroke="#B93A64"/>','#B93A64'),
+  want:ic(HAND,'#4A342C'),
+  no:ic(HAND+'<path d="M3 3L21 21" stroke="#D93B3B" stroke-width="3"/>'),
+  ok:ic('<circle cx="12" cy="12" r="9.5" fill="#4DB36A" stroke="#2E8B4D"/><path d="M7 12.5l3.5 3.5L17 9" stroke="#fff" stroke-width="3"/>','#2E8B4D'),
+  again:ic('<path d="M19 12a7 7 0 1 1-2.2-5.1"/><path d="M19.5 3.5v4.5h-4.5" fill="none"/>'),
+  help:ic('<path d="M4 5h16v11H11l-4 4v-4H4Z" fill="#fff"/><path d="M12 8v4"/><circle cx="12" cy="14.2" r=".6" fill="#4A342C"/>'),
+  done:ic('<path d="M6 21V3"/><path d="M6 4h12l-3 4 3 4H6Z" fill="#4F9BE8" stroke="#2B6EB8"/>','#2B6EB8'),
+  at:ic('<path d="M12 21S5 14.5 5 9.5a7 7 0 0 1 14 0C19 14.5 12 21 12 21Z" fill="#F2923C"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/>'),
+  yes:ic('<circle cx="12" cy="12" r="9.5" fill="#4DB36A" stroke="#2E8B4D"/><path d="M7 12.5l3.5 3.5L17 9" stroke="#fff" stroke-width="3"/>'),
+  none:ic('<circle cx="12" cy="12" r="9.5" fill="#fff" stroke="#E0701F" stroke-width="2.6"/><path d="M5.5 5.5l13 13" stroke="#E0701F" stroke-width="3"/>'),
+  where:ic('<path d="M10 20S4 14.5 4 10a6 6 0 0 1 12 0C16 14.5 10 20 10 20Z" fill="#9A66DA" stroke="#6E3FB0"/><circle cx="10" cy="10" r="2.2" fill="#fff"/><path d="M18 5.5a2.2 2.2 0 1 1 2 2.6c-.5.4-.6.8-.6 1.4" stroke="#6E3FB0"/><circle cx="19.4" cy="12" r=".5" fill="#6E3FB0"/>','#6E3FB0'),
+  what:ic('<circle cx="12" cy="12" r="9.5" fill="#9A66DA" stroke="#6E3FB0"/><path d="M9.3 9.5a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2.9-1.2 1.8" stroke="#fff" stroke-width="2.6"/><circle cx="12" cy="17" r="1.2" fill="#fff" stroke="none"/>'),
+  who:ic('<circle cx="10" cy="8" r="3.4" fill="#9A66DA" stroke="#6E3FB0"/><path d="M3.5 20Q3.5 13.5 10 13.5T16.5 20Z" fill="#9A66DA" stroke="#6E3FB0"/><path d="M17.5 5.5a2.2 2.2 0 1 1 2 2.6c-.5.4-.6.8-.6 1.4" stroke="#6E3FB0"/><circle cx="18.9" cy="12" r=".5" fill="#6E3FB0"/>','#6E3FB0'),
+  have:ic('<rect x="3" y="4" width="14" height="14" rx="3" fill="#fff" stroke="#6E3FB0"/><path d="M6.5 11l3 3 5-6" stroke="#2E8B4D" stroke-width="2.6"/><path d="M19 8.5a2 2 0 1 1 1.8 2.4c-.4.3-.5.6-.5 1.2" stroke="#6E3FB0"/><circle cx="20.3" cy="14.5" r=".5" fill="#6E3FB0"/>','#6E3FB0'),
+  thanks:ic('<path d="M12 21C3 14 2 8 6 5.5 9 4 11 6 12 8 13 6 15 4 18 5.5 22 8 21 14 12 21Z" fill="#FFC0D6" stroke="#EC6A9A"/>','#EC6A9A'),
+  idk:ic('<circle cx="12" cy="12" r="9.5" fill="#fff" stroke="#8C7468"/><path d="M8 9.5a4 4 0 0 1 8 0c0 2.5-3 2.7-3 5" stroke="#8C7468"/><circle cx="13" cy="18" r="1" fill="#8C7468" stroke="none"/>','#8C7468'),
+  wrong:ic('<circle cx="12" cy="12" r="9.5" fill="#fff" stroke="#E0701F" stroke-width="2.6"/><path d="M8 8l8 8M16 8l-8 8" stroke="#E0701F" stroke-width="3"/>'),
+};
+const posIcon=(p)=>{const dots={'上面':[12,5],'下面':[12,19],'左邊':[5,12],'右邊':[19,12],'旁邊':[17,17]}[p];return ic(`<rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="#fff" stroke="#2B6EB8"/><circle cx="${dots[0]}" cy="${dots[1]}" r="3.4" fill="#EF5350" stroke="#B53D3D"/>${p==='旁邊'?'<circle cx="8" cy="12" r="3.4" fill="#F2C230" stroke="#B58D14"/>':''}`)};
+const glyph=(t)=>`<span class="glyph">${t}</span>`;
+
+/* ---------- 詞卡資料 ---------- */
+const PICON={hike:'樹',read:'書架',sing:'麥克風',puzzle:'盆栽',draw:'畫架'},AICON={hike:'背包',read:'書',sing:'音符',puzzle:'拼圖片',draw:'畫筆'};
+const TIMES=[['早上','太陽'],['下午','花'],['晚上','月亮'],['放學後','背包'],['星期六','時鐘']];
+let PP={};try{PP=JSON.parse(localStorage.getItem('aac-people')||'{}')}catch(e){}
+const savePP=()=>{try{localStorage.setItem('aac-people',JSON.stringify(PP));return true}catch(e){return false}};
+const nmOf=(k)=>(PP[k]&&PP[k].name)||D.find(d=>d.key===k).who;
+const picOf=(k,s)=>PP[k]&&PP[k].photo?`<img src="${PP[k].photo}" alt="" style="height:${s}px;width:${s}px;max-width:100%;object-fit:cover;border-radius:18px;display:block">`:A.heroSvg(k,s);
+function photoFrom(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const z=240,c=document.createElement('canvas');c.width=c.height=z;const s=Math.min(im.width,im.height),x=(im.width-s)/2,y=(im.height-s)/2;c.getContext('2d').drawImage(im,x,y,s,s,0,0,z,z);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.82))};im.onerror=()=>{URL.revokeObjectURL(u);rej()};im.src=u})}
+function tiles(){
+  const t=[];
+  D.forEach(d=>t.push({id:'p'+d.key,cat:'person',role:'who',val:d.key,label:nmOf(d.key),say:nmOf(d.key),art:picOf(d.key,150),lesson:d.key}));
+  D.forEach(d=>t.push({id:'v'+d.key,cat:'verb',role:'act',val:d.key,label:d.act,say:d.act,art:A.itemSvg(AICON[d.key],120),lesson:d.key}));
+  D.forEach(d=>t.push({id:'l'+d.key,cat:'place',role:'place',val:d.key,label:'在'+d.place,say:'在'+d.place,art:A.itemSvg(PICON[d.key],120),lesson:d.key}));
+  TIMES.forEach(([n,ic])=>t.push({id:'t'+n,cat:'time',role:'tm',val:n,label:n,say:n,art:A.itemSvg(ic,120),adv:1}));
+  D.forEach(d=>d.items.forEach(it=>t.push({id:'i'+it.name,cat:'item',label:it.name,say:it.name,art:A.itemSvg(it.name,120),lesson:d.key})));
+  ['上面','下面','左邊','右邊','旁邊'].forEach(p=>t.push({id:'w'+p,cat:'pos',label:p,say:p,art:posIcon(p)}));
+  t.push({id:'qwhere',cat:'q',label:'哪裡',say:'哪裡？',art:ICO.where},{id:'qwhat',cat:'q',label:'什麼',say:'什麼？',art:ICO.what},{id:'qhave',cat:'q',label:'有沒有',say:'有沒有？',art:ICO.have},{id:'qwho',cat:'q',label:'誰',say:'誰？',art:ICO.who});
+  t.push({id:'qwhy',cat:'q',label:'為什麼',say:'為什麼？',art:ICO.what,adv:1},{id:'qplz',cat:'q',label:'請問',say:'請問',art:glyph('問'),adv:1});
+  t.push({id:'ayes',cat:'ans',label:'對',say:'對',art:ICO.yes},{id:'ano',cat:'ans',label:'不對',say:'不對',art:ICO.wrong},{id:'aidk',cat:'ans',label:'不知道',say:'我不知道',art:ICO.idk},{id:'athx',cat:'ans',label:'謝謝',say:'謝謝',art:ICO.thanks});
+  return t;
+}
+function core(lv){
+  const c=[['我',ICO.me,'person'],['喜歡',ICO.like,'verb'],['要',ICO.want,'verb'],['不要',ICO.no,'verb'],['好',ICO.ok,'ans'],['在',ICO.at,'pos'],['有',ICO.yes,'ans'],['沒有',ICO.none,'ans'],['再一次',ICO.again,'verb'],['幫忙',ICO.help,'ans'],['完成',ICO.done,'ans']];
+  if(lv===2)c.push(['因為',glyph('因'),'q'],['和',glyph('和'),'pos'],['想',glyph('想'),'verb'],['正在',glyph('正'),'verb'],['現在',glyph('現'),'pos'],['的',glyph('的'),'pos'],['一個',glyph('一'),'pos']);
+  return c.map(([l,art,cat])=>({id:'c'+l,cat,label:l,say:l==='有'?'有':l==='要'?'要':l,art,core:1}));
+}
+const colorOf=(cat)=>CAT[cat].c;
+
+/* ---------- 狀態 ---------- */
+const ST={lv:1,size:'m',speakEach:true,rate:.8,scan:false,scanMs:1800,lesson:null,tab:'item',strip:[],fr:{tm:null,who:null,place:null,act:null}};
+try{const x=JSON.parse(localStorage.getItem('aac-set')||'{}');['lv','size','speakEach','scan'].forEach(k=>{if(x[k]!==undefined)ST[k]=x[k]})}catch(e){}
+const save=()=>{try{localStorage.setItem('aac-set',JSON.stringify({lv:ST.lv,size:ST.size,speakEach:ST.speakEach,scan:ST.scan}))}catch(e){}};
+let voice=null;const pickVoice=()=>{const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[];voice=v.find(x=>/zh[-_]TW/i.test(x.lang))||v.find(x=>/^zh/i.test(x.lang))||null};
+if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function speak(text){if(!text||!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='zh-TW';if(voice)u.voice=voice;u.rate=ST.rate;u.pitch=1.1;speechSynthesis.speak(u)}catch(e){}}
+let actx=null;function blip(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();const o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.value=660;g.gain.setValueAtTime(.12,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.12);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.14)}catch(e){}}
+
+function mkOrd(){
+  const keys=D.map(d=>d.key),sh=(a)=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+  for(let n=0;n<500;n++){const p=[sh(keys),sh(keys),sh(keys)];let ok=true;for(let i=0;i<5;i++){if(p[0][i]===p[1][i]||p[0][i]===p[2][i]||p[1][i]===p[2][i])ok=false}if(ok)return{who:p[0],place:p[1],act:p[2],tm:sh(['早上','下午','晚上','放學後','星期六'])}}
+  return{who:keys,place:keys.slice(1).concat(keys[0]),act:keys.slice(2).concat(keys.slice(0,2)),tm:['早上','下午','晚上','放學後','星期六']}
+}
+/* ---------- 畫面 ---------- */
+const app=document.getElementById('app');
+function render(){
+  document.body.classList.remove('size-l','size-m','size-s');document.body.classList.add('size-'+ST.size);
+  const T1=tiles().filter(x=>ST.lv===2||!x.adv);
+  const lessonObj=ST.lesson?D.find(d=>d.key===ST.lesson):null;
+  const vis=(x)=>!lessonObj||!x.lesson||x.lesson===ST.lesson;
+  app.innerHTML='';
+  // 標題與設定
+  const bar=$(`<div class="bar"><h1>誰？在哪裡？做什麼？</h1>
+    <div class="seg" role="group" aria-label="句子難度"><button data-lv="1" aria-pressed="${ST.lv===1}">簡單</button><button data-lv="2" aria-pressed="${ST.lv===2}">進階</button></div>
+    <div class="seg" role="group" aria-label="格子大小"><button data-sz="l" aria-pressed="${ST.size==='l'}">大</button><button data-sz="m" aria-pressed="${ST.size==='m'}">中</button><button data-sz="s" aria-pressed="${ST.size==='s'}">小</button></div>
+    <button class="tg" id="tgEach" aria-pressed="${ST.speakEach}">點了就念</button>
+    <button class="tg" id="tgSlow" aria-pressed="${ST.rate<.7}">慢慢說</button>
+    <button class="tg" id="tgShuf">換順序</button>
+    <button class="tg" id="tgSet">設定學生</button>
+    <button class="tg" id="tgScan" aria-pressed="${ST.scan}">掃描</button></div>`);
+  bar.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{ST.lv=+b.dataset.lv;save();render()});
+  bar.querySelectorAll('[data-sz]').forEach(b=>b.onclick=()=>{ST.size=b.dataset.sz;save();render()});
+  bar.querySelector('#tgEach').onclick=()=>{ST.speakEach=!ST.speakEach;save();render()};
+  bar.querySelector('#tgSlow').onclick=()=>{ST.rate=ST.rate<.7?.8:.55;render()};
+  bar.querySelector('#tgSet').onclick=()=>openSet();
+  bar.querySelector('#tgShuf').onclick=()=>{ST.ord=mkOrd();render()};
+  bar.querySelector('#tgScan').onclick=()=>{ST.scan=!ST.scan;save();render()};
+  app.appendChild(bar);
+  // 整句框架
+  if(!ST.ord)ST.ord=mkOrd();const FR=ST.fr,ROLES=ST.lv===2?[['tm','什麼時候？','var(--r-when,#9A66DA)'],['who','誰？','var(--r-who)'],['place','在哪裡？','var(--r-where)'],['act','做什麼？','var(--r-what)']]:[['who','誰？','var(--r-who)'],['place','在哪裡？','var(--r-where)'],['act','做什麼？','var(--r-what)']];
+  const TM_ART=(t)=>A.itemSvg(TIMES.find(x=>x[0]===t)[1],60);
+  const frame=$(`<div class="frame" aria-label="整句：誰在哪裡做什麼"><div class="prev" id="prev"></div><div class="fslots" id="fsl"></div><div class="fact"><button class="play" id="fplay">說整句</button><div class="mini"><button id="fdice" aria-label="亂數">亂數</button><button id="fclr" aria-label="清除">清除</button></div></div></div>`);
+  const frSentence=()=>{const p=[];if(ST.lv===2&&FR.tm)p.push(FR.tm+'，');if(FR.who)p.push(nmOf(FR.who));if(FR.place)p.push('在'+bySc(FR.place).place);if(FR.act)p.push(bySc(FR.act).act);return p.join('')};
+  const bySc=(k)=>D.find(d=>d.key===k);
+  let syncP=null;const drawFrame=()=>{if(syncP)syncP();
+    const sl=frame.querySelector('#fsl');sl.innerHTML='';
+    ROLES.forEach(([k,lab,col])=>{
+      const v=FR[k];let art='',txt='';
+      if(v){if(k==='who'){art=picOf(v,100);txt=nmOf(v)}else if(k==='place'){art=A.itemSvg(PICON[v],80);txt='在'+bySc(v).place}else if(k==='act'){art=A.itemSvg(AICON[v],80);txt=bySc(v).act}else{art=TM_ART(v);txt=v}}
+      const b=$(`<button class="fslot ${v?'on':''}" style="--sc:${col}">${v?art+txt:lab}</button>`);
+      b.onclick=()=>{if(v){blip();speak(txt)}else{const p=document.querySelector('.pick3');if(p)p.scrollIntoView({behavior:'smooth',block:'center'})}};sl.appendChild(b)});
+    const pv=frame.querySelector('#prev');
+    if(FR.who&&FR.place&&FR.act)pv.innerHTML=A.scene(FR.place,{who:FR.who,act:FR.act,items:false,time:ST.lv===2?FR.tm:undefined});else pv.textContent='選好「誰、在哪裡、做什麼」，圖片就會出現';
+  };
+  drawFrame();
+  frame.querySelector('#fplay').onclick=()=>{blip();speak(frSentence()+(frSentence()?'。':''))};
+  frame.querySelector('#fclr').onclick=()=>{FR.tm=FR.who=FR.place=FR.act=null;drawFrame()};
+  frame.querySelector('#fdice').onclick=()=>{const r=()=>D[Math.floor(Math.random()*5)].key;FR.who=r();FR.place=r();FR.act=r();FR.tm=TIMES[Math.floor(Math.random()*5)][0];blip();drawFrame();speak(frSentence()+'。')};
+  app.appendChild(frame);
+  // 三種挑選：誰？在哪裡？做什麼？
+  const RCOL={tm:'#9A66DA',who:'#3F7FD9',place:'#2E9B63',act:'#E0701F'},RLAB={tm:'什麼時候？',who:'誰？',place:'在哪裡？',act:'做什麼？'};
+  const pk=$(`<div class="pick3" aria-label="挑選：誰、在哪裡、做什麼"></div>`);
+  ROLES.forEach(([k])=>{
+    const row=$(`<div class="prow" style="--rc:${RCOL[k]}"><div class="rl">${RLAB[k]}</div><div class="pt"></div></div>`);
+    T1.filter(x=>x.role===k).sort((a,b)=>ST.ord[k].indexOf(a.val)-ST.ord[k].indexOf(b.val)).forEach(x=>{
+      const b=$(`<button class="tile" style="--c:${RCOL[k]}" data-v="${x.val}" aria-pressed="${FR[k]===x.val}"><span class="pic">${x.art||''}</span><span>${x.label}</span></button>`);
+      b.onclick=()=>{blip();if(ST.speakEach)speak(x.say);FR[k]=FR[k]===x.val?null:x.val;row.querySelectorAll('.tile').forEach(e=>e.setAttribute('aria-pressed',FR[k]===e.dataset.v));drawFrame()};
+      row.querySelector('.pt').appendChild(b)});
+    pk.appendChild(row)});
+  app.appendChild(pk);
+  const syncPick=()=>pk.querySelectorAll('.prow').forEach((row,i)=>{const k=ROLES[i][0];row.querySelectorAll('.tile').forEach(e=>e.setAttribute('aria-pressed',FR[k]===e.dataset.v))});
+  syncP=syncPick;
+  // 掃描
+  startScan();
+}
+/* ---------- 單鍵掃描 ---------- */
+let scanTimer=null,scanIdx=-1,scanEls=[];
+function startScan(){
+  clearInterval(scanTimer);document.querySelectorAll('.pick').forEach(e=>e.remove());
+  if(!ST.scan)return;
+  scanEls=[...document.querySelectorAll('.tabs button,.pick3 .tile,.grid .tile,.core .tile,.say button,#play,#back,#clr')];scanIdx=-1;
+  const pk=$(`<button class="pick">選這個（或按空白鍵）</button>`);pk.onclick=pickNow;document.body.appendChild(pk);
+  const step=()=>{scanEls.forEach(e=>e.classList.remove('scan'));scanIdx=(scanIdx+1)%scanEls.length;const e=scanEls[scanIdx];e.classList.add('scan');e.scrollIntoView({block:'nearest',inline:'nearest'})};
+  step();scanTimer=setInterval(step,ST.scanMs);
+}
+function pickNow(){const e=scanEls[scanIdx];if(e){clearInterval(scanTimer);e.click();if(ST.scan)setTimeout(()=>{if(document.body.contains(e))return;},0)}}
+document.addEventListener('keydown',(ev)=>{if(!ST.scan)return;if(ev.code==='Space'||ev.key==='Enter'){ev.preventDefault();const e=scanEls[scanIdx];if(e&&!e.classList.contains('pick')){clearInterval(scanTimer);const wasTab=e.closest('.tabs');e.click();if(!wasTab&&document.body.contains(app)&&ST.scan&&app.contains(e)){scanTimer=setInterval(()=>{scanEls.forEach(x=>x.classList.remove('scan'));scanIdx=(scanIdx+1)%scanEls.length;const n=scanEls[scanIdx];n.classList.add('scan')},ST.scanMs)}}}});
+
+function openSet(){
+  const dlg=document.createElement('div');dlg.className='dlg';
+  const box=document.createElement('div');dlg.appendChild(box);
+  const draw=()=>{
+    box.innerHTML=`<h2>設定學生（誰？）</h2><p>照片只存在這台裝置的瀏覽器裡，不會上傳到網路。沒換照片的人，就顯示卡通人物。</p>`;
+    D.forEach(d=>{
+      const r=document.createElement('div');r.className='prs';
+      r.innerHTML=`<div class="ph">${picOf(d.key,84)}</div><input type="text" value="${nmOf(d.key).replace(/"/g,'&quot;')}" aria-label="名字" maxlength="8"><button type="button" class="pk">選照片</button><button type="button" class="rs">還原</button><input type="file" accept="image/*" hidden>`;
+      const inp=r.querySelector('input[type=text]'),fi=r.querySelector('input[type=file]');
+      inp.onchange=()=>{const v=inp.value.trim();PP[d.key]=Object.assign(PP[d.key]||{},{name:v&&v!==d.who?v:undefined});savePP();};
+      r.querySelector('.pk').onclick=()=>fi.click();
+      fi.onchange=async()=>{if(!fi.files[0])return;try{const p=await photoFrom(fi.files[0]);PP[d.key]=Object.assign(PP[d.key]||{},{photo:p});if(!savePP())alert('儲存失敗：這台裝置的儲存空間可能不足。');draw()}catch(e){alert('這張圖片無法讀取，請換一張。')}};
+      r.querySelector('.rs').onclick=()=>{delete PP[d.key];savePP();draw()};
+      box.appendChild(r)});
+    const note=document.createElement('p');note.textContent='想讓另一台裝置（例如家長的手機）也用同一組照片：先按「匯出設定檔」存成檔案，傳給家長，再在對方的裝置按「匯入設定檔」。設定檔內含照片，請只傳給家長本人。';box.appendChild(note);
+    const row=document.createElement('div');row.className='row';
+    row.innerHTML=`<button type="button" id="ex">匯出設定檔</button><button type="button" id="im">匯入設定檔</button><input type="file" id="imf" accept=".json,application/json" hidden><button type="button" class="go" id="ok">完成</button>`;
+    box.appendChild(row);
+    row.querySelector('#ex').onclick=()=>{const b=new Blob([JSON.stringify({v:1,people:PP})],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='溝通板學生設定.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+    row.querySelector('#im').onclick=()=>row.querySelector('#imf').click();
+    row.querySelector('#imf').onchange=async(e)=>{const fl=e.target.files[0];if(!fl)return;try{const j=JSON.parse(await fl.text());if(!j||typeof j.people!=='object')throw 0;const ok={};D.forEach(d=>{const q=j.people[d.key];if(q&&typeof q==='object'){ok[d.key]={};if(typeof q.name==='string')ok[d.key].name=q.name.slice(0,8);if(typeof q.photo==='string'&&/^data:image\/jpeg;base64,/.test(q.photo))ok[d.key].photo=q.photo}});PP=ok;savePP();draw()}catch(err){alert('這個檔案不是正確的設定檔。')}};
+    row.querySelector('#ok').onclick=()=>{dlg.remove();render()};
+  };
+  draw();document.body.appendChild(dlg);
+}
+/* ---------- 列印圖卡（網址加 #print）---------- */
+function buildPrint(){
+  document.body.classList.add('print');
+  const all=tiles().concat(core(2));const pr=document.getElementById('print');let h='';
+  const groups=[['person','人物・誰'],['place','地點・在哪裡'],['verb','事情・做什麼'],['time','時間'],['item','物品'],['pos','方位'],['q','問句'],['ans','回答'],['core','常用字']];
+  groups.forEach(([k,n])=>{
+    const L=k==='core'?core(2):tiles().filter(x=>x.cat===k);
+    for(let i=0;i<L.length;i+=18){
+      h+=`<div class="pg"><h2>休閒活動溝通圖卡｜${n}</h2><div class="pgrid">${L.slice(i,i+18).map(x=>`<div class="pc" style="--c:${k==='core'?'#8C7468':colorOf(x.cat)}"><div class="pic">${x.art||''}</div><div>${x.label}</div></div>`).join('')}</div></div>`;
+    }
+  });
+  pr.innerHTML=h.replace(/var\(--c-([a-z]+)\)/g,(m,a)=>getComputedStyle(document.documentElement).getPropertyValue('--c-'+a));
+}
+if(location.hash==='#print')buildPrint();else render();
+})();
+</script>
